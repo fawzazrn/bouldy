@@ -1,6 +1,6 @@
 from sqlalchemy import create_engine, text
 
-DATABASE_URL = "postgresql+psycopg://postgres:postgres@localhost:5432/boulder"
+DATABASE_URL = "postgresql+psycopg2://neondb_owner:npg_sx3eHVujr5ZS@ep-purple-fire-azzsq5pl.c-3.ap-southeast-1.aws.neon.tech/neondb?sslmode=require"
 
 engine = create_engine(DATABASE_URL)
 
