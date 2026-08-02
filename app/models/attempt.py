@@ -1,6 +1,9 @@
+from enum import Enum
+
 from sqlalchemy import ForeignKey, Integer
 from sqlalchemy import String
 
+from app.models.enums import AttemptResult
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
 from sqlalchemy.orm import relationship
@@ -27,8 +30,17 @@ class Attempt(Base):
         nullable=False,
     )
 
-    result: Mapped[str] = mapped_column(
-        String(20)
+    result: Mapped[AttemptResult] = mapped_column(
+        Enum(
+            AttemptResult,
+            name="attempt_result_enum",
+            values_callable=lambda enum: [
+                item.value for item in enum
+            ],
+        ),
+        nullable=False,
+        default=AttemptResult.PROJECT,
+        server_default="project",
     )
 
     notes: Mapped[str | None]

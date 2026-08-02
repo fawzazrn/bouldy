@@ -23,6 +23,7 @@ class RouteCreate(RouteBase):
 
 class RouteUpdate(BaseModel):
     gym_id: int | None = None
+    route_name: str | None = None
     grade: str | None = None
     colour: str | None = None
     wall: str | None = None

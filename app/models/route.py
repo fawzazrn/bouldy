@@ -67,6 +67,11 @@ class Route(Base):
         cascade="all, delete-orphan"
     )
     
+    route_name: Mapped[str] = mapped_column(
+    String(100),
+    nullable=False,
+    )
+    
     status: Mapped[RouteStatus] = mapped_column(
     Enum(
         RouteStatus,
