@@ -1,5 +1,4 @@
-from enum import Enum
-
+from sqlalchemy import Enum
 from sqlalchemy import ForeignKey, Integer
 from sqlalchemy import String
 
