@@ -10,7 +10,7 @@ def create_session(
     user_id: int,
 ):
     db_session = Session(
-        **session.model_dump(),
+        **session.model_dump(exclude={"user_id"}),
         user_id=user_id,
     )
 
