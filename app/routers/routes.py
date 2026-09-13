@@ -62,6 +62,12 @@ def create_new_route(
         route=route,
     )
 
+    if db_route is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Gym not found",
+        )
+
     return route_to_response(db_route)
 
 

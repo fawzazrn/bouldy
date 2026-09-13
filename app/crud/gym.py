@@ -22,6 +22,10 @@ def get_gym(db: Session, gym_id: int):
     return db.query(Gym).filter(Gym.id == gym_id).first()
 
 
+def get_gym_by_name(db: Session, name: str):
+    return db.query(Gym).filter(Gym.name == name).first()
+
+
 def update_gym(
     db: Session,
     gym_id: int,
@@ -43,11 +47,18 @@ def update_gym(
     return gym
 
 
+class GymHasRoutesError(Exception):
+    """Raised when deleting a gym that still has routes referencing it."""
+
+
 def delete_gym(db: Session, gym_id: int):
     gym = get_gym(db, gym_id)
 
     if gym is None:
         return None
+
+    if gym.routes:
+        raise GymHasRoutesError(gym_id)
 
     db.delete(gym)
     db.commit()
