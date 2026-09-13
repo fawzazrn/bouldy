@@ -88,3 +88,16 @@ def test_create_route_rejects_unknown_style(client, gym):
         },
     )
     assert resp.status_code == 422
+
+
+def test_create_route_missing_gym_is_400(client):
+    resp = client.post(
+        "/routes/",
+        json={
+            "gym_id": 9999,
+            "route_name": "Orphan Route",
+            "grade": "V1",
+            "styles": [],
+        },
+    )
+    assert resp.status_code == 400

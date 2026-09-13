@@ -100,3 +100,8 @@ def test_delete_session(auth_client, user, gym):
     ).json()
     assert auth_client.delete(f"/sessions/{created['id']}").status_code == 204
     assert auth_client.get(f"/sessions/{created['id']}").status_code == 404
+
+
+def test_create_session_missing_gym_is_400(auth_client, user):
+    resp = auth_client.post("/sessions/", json=_session_payload(user.id, 9999))
+    assert resp.status_code == 400

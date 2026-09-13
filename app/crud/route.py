@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from datetime import date
 
+from app.models.gym import Gym
 from app.models.route import Route
 from app.models.route_style_association import RouteStyleAssociation
 from app.schemas.route import RouteCreate, RouteUpdate
@@ -11,6 +12,11 @@ def create_route(
     db: Session,
     route: RouteCreate,
 ):
+    gym = db.query(Gym).filter(Gym.id == route.gym_id).first()
+
+    if gym is None:
+        return None
+
     route_data = route.model_dump(
         exclude={"styles"}
     )

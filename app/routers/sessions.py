@@ -39,11 +39,19 @@ def create_new_session(
     db: DBSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return create_session(
+    db_session = create_session(
         db=db,
         session=session,
         user_id=current_user.id,
     )
+
+    if db_session is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Gym not found",
+        )
+
+    return db_session
 
 
 @router.get(

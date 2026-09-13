@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session as DBSession
 
+from app.models.gym import Gym
 from app.models.session import Session
 from app.schemas.session import SessionCreate, SessionUpdate
 
@@ -9,6 +10,11 @@ def create_session(
     session: SessionCreate,
     user_id: int,
 ):
+    gym = db.query(Gym).filter(Gym.id == session.gym_id).first()
+
+    if gym is None:
+        return None
+
     db_session = Session(
         **session.model_dump(exclude={"user_id"}),
         user_id=user_id,
