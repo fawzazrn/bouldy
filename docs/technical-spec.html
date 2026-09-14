@@ -1,0 +1,663 @@
+<title>Bouldy API Spec</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=Libre+Franklin:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --bg:#e9e6dd;
+    --surface:#fbfaf6;
+    --surface-2:#f1efe6;
+    --ink:#211f1a;
+    --muted:#726c5f;
+    --border:#d9d4c7;
+    --accent:#2f6f6b;
+    --accent-ink:#f4faf9;
+    --accent-soft:#dce9e7;
+    --danger:#a83b30;
+    --danger-soft:#ecdcd6;
+    --flash:#a67a12;
+    --flash-soft:#ece2c6;
+    --zone:#2f5fa8;
+    --zone-soft:#dbe4f2;
+    --send:#25794f;
+    --send-soft:#d9e8de;
+    --project:#726c5f;
+    --project-soft:#e4e0d5;
+    --shadow: 0 1px 2px rgba(33,31,26,0.06), 0 8px 24px -16px rgba(33,31,26,0.25);
+    --font-display:"Big Shoulders Display", "Arial Narrow", sans-serif;
+    --font-body:"Libre Franklin", "Segoe UI", sans-serif;
+    --font-mono:"IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#17160f;
+      --surface:#1f1d17;
+      --surface-2:#262319;
+      --ink:#ece7d9;
+      --muted:#a89f8b;
+      --border:#38341f;
+      --accent:#5fc2ba;
+      --accent-ink:#0c211e;
+      --accent-soft:#1c3532;
+      --danger:#e0796b;
+      --danger-soft:#3a231e;
+      --flash:#e0b74a;
+      --flash-soft:#3a301a;
+      --zone:#7ba3e0;
+      --zone-soft:#1f2c3f;
+      --send:#6fc492;
+      --send-soft:#1c3324;
+      --project:#a89f8b;
+      --project-soft:#2c2920;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -16px rgba(0,0,0,0.6);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#17160f;
+    --surface:#1f1d17;
+    --surface-2:#262319;
+    --ink:#ece7d9;
+    --muted:#a89f8b;
+    --border:#38341f;
+    --accent:#5fc2ba;
+    --accent-ink:#0c211e;
+    --accent-soft:#1c3532;
+    --danger:#e0796b;
+    --danger-soft:#3a231e;
+    --flash:#e0b74a;
+    --flash-soft:#3a301a;
+    --zone:#7ba3e0;
+    --zone-soft:#1f2c3f;
+    --send:#6fc492;
+    --send-soft:#1c3324;
+    --project:#a89f8b;
+    --project-soft:#2c2920;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px -16px rgba(0,0,0,0.6);
+  }
+
+  *{box-sizing:border-box;}
+  body{background:var(--bg); color:var(--ink); font-family:var(--font-body); line-height:1.55;}
+  h1,h2,h3{font-family:var(--font-display); text-wrap:balance; letter-spacing:0.01em;}
+  code, .mono{font-family:var(--font-mono);}
+  a{color:var(--accent);}
+
+  .shell{
+    max-width:1180px;
+    margin:0 auto;
+    padding:40px 24px 100px;
+    display:grid;
+    grid-template-columns:220px minmax(0,1fr);
+    gap:48px;
+  }
+  @media (max-width:880px){
+    .shell{grid-template-columns:1fr;}
+    nav.toc{position:static !important; order:2;}
+  }
+
+  header.doc-head{
+    grid-column:1 / -1;
+    display:flex;
+    flex-wrap:wrap;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:16px;
+    padding-bottom:24px;
+    border-bottom:2px solid var(--ink);
+    margin-bottom:8px;
+  }
+  header.doc-head .title-block .eyebrow{
+    display:block; font-family:var(--font-mono); font-size:12px; letter-spacing:0.14em;
+    text-transform:uppercase; color:var(--accent); margin-bottom:8px;
+  }
+  header.doc-head h1{
+    font-size:clamp(34px,5vw,52px); font-weight:800; margin:0; line-height:0.95;
+    text-transform:uppercase; letter-spacing:0.005em;
+  }
+  header.doc-head p.tagline{
+    margin:10px 0 0; max-width:52ch; color:var(--muted); font-size:15px;
+  }
+  .meta-row{
+    display:flex; flex-wrap:wrap; gap:8px; align-self:flex-end;
+  }
+  .meta-chip{
+    font-family:var(--font-mono); font-size:12px; padding:5px 10px; border-radius:3px;
+    background:var(--surface-2); border:1px solid var(--border); color:var(--muted);
+    white-space:nowrap;
+  }
+
+  nav.toc{
+    align-self:start; position:sticky; top:28px;
+    display:flex; flex-direction:column; gap:2px;
+    font-size:13px;
+  }
+  nav.toc .toc-label{
+    font-family:var(--font-mono); font-size:11px; letter-spacing:0.12em; text-transform:uppercase;
+    color:var(--muted); margin-bottom:8px;
+  }
+  nav.toc a{
+    color:var(--ink); text-decoration:none; padding:6px 0 6px 12px;
+    border-left:2px solid var(--border); opacity:0.75;
+  }
+  nav.toc a:hover{opacity:1; border-left-color:var(--accent); color:var(--accent);}
+
+  main{min-width:0;}
+  section{margin-bottom:56px; scroll-margin-top:24px;}
+  section .eyebrow{
+    display:block; font-family:var(--font-mono); font-size:11px; letter-spacing:0.14em;
+    text-transform:uppercase; color:var(--accent); margin-bottom:6px;
+  }
+  section h2{
+    font-size:26px; font-weight:700; margin:0 0 16px; text-transform:uppercase;
+    padding-bottom:10px; border-bottom:1px solid var(--border);
+  }
+  section h3{
+    font-size:17px; font-weight:700; margin:28px 0 10px; text-transform:none;
+    color:var(--ink);
+  }
+  p{margin:0 0 14px; max-width:68ch;}
+  ul, ol{margin:0 0 14px; padding-left:20px; max-width:66ch;}
+  li{margin-bottom:6px;}
+  strong{font-weight:600;}
+
+  .lede{font-size:16.5px; color:var(--ink);}
+
+  .card{
+    background:var(--surface); border:1px solid var(--border); border-radius:6px;
+    padding:18px 20px; box-shadow:var(--shadow);
+  }
+
+  .grid-2{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+  .grid-3{display:grid; grid-template-columns:repeat(3,1fr); gap:16px;}
+  @media (max-width:640px){.grid-2,.grid-3{grid-template-columns:1fr;}}
+
+  table{border-collapse:collapse; width:100%; font-size:14px;}
+  .table-wrap{overflow-x:auto; border:1px solid var(--border); border-radius:6px; background:var(--surface);}
+  th, td{text-align:left; padding:10px 14px; border-bottom:1px solid var(--border); vertical-align:top;}
+  th{
+    font-family:var(--font-mono); font-size:11px; letter-spacing:0.08em; text-transform:uppercase;
+    color:var(--muted); background:var(--surface-2); font-weight:500;
+  }
+  tr:last-child td{border-bottom:none;}
+  td code, td .mono{font-size:13px;}
+
+  .method{
+    font-family:var(--font-mono); font-weight:600; font-size:12px; padding:3px 8px;
+    border-radius:3px; display:inline-block; white-space:nowrap;
+  }
+  .m-get{background:var(--zone-soft); color:var(--zone);}
+  .m-post{background:var(--send-soft); color:var(--send);}
+  .m-put, .m-patch{background:var(--flash-soft); color:var(--flash);}
+  .m-delete{background:var(--danger-soft); color:var(--danger);}
+
+  .pill{
+    font-family:var(--font-mono); font-size:11px; padding:3px 9px; border-radius:99px;
+    border:1px solid var(--border); color:var(--muted); white-space:nowrap;
+  }
+  .pill.auth{background:var(--surface-2); color:var(--ink); border-color:var(--ink);}
+  .pill.public{background:transparent;}
+
+  .enum-block{margin-bottom:22px;}
+  .enum-group-label{
+    font-family:var(--font-mono); font-size:11px; text-transform:uppercase; letter-spacing:0.1em;
+    color:var(--muted); margin:14px 0 8px;
+  }
+  .chip-row{display:flex; flex-wrap:wrap; gap:8px;}
+  .chip{
+    font-family:var(--font-mono); font-size:12.5px; padding:6px 11px; border-radius:4px;
+    background:var(--surface-2); border:1px solid var(--border); color:var(--ink);
+  }
+  .chip.result{
+    display:flex; align-items:center; gap:7px; font-size:13px; padding:8px 12px;
+  }
+  .swatch{width:9px; height:9px; border-radius:50%; flex:none;}
+
+  .callout{
+    border-left:3px solid var(--accent); background:var(--accent-soft); border-radius:0 6px 6px 0;
+    padding:14px 18px; margin:0 0 14px;
+  }
+  .callout.warn{border-left-color:var(--danger); background:var(--danger-soft);}
+  .callout p{margin:0; max-width:none;}
+  .callout p + p{margin-top:8px;}
+
+  .rule-list{list-style:none; padding:0; display:flex; flex-direction:column; gap:10px;}
+  .rule-list li{
+    display:grid; grid-template-columns:22px 1fr; gap:10px; margin:0; max-width:none;
+    padding:12px 14px; background:var(--surface); border:1px solid var(--border); border-radius:6px;
+  }
+  .rule-list .num{font-family:var(--font-mono); color:var(--accent); font-weight:600;}
+
+  .timeline{list-style:none; margin:0; padding:0; border-left:2px solid var(--border);}
+  .timeline li{
+    position:relative; padding:0 0 20px 22px; max-width:none;
+  }
+  .timeline li::before{
+    content:""; position:absolute; left:-6px; top:4px; width:10px; height:10px;
+    border-radius:50%; background:var(--accent); border:2px solid var(--surface);
+  }
+  .timeline .rev{font-family:var(--font-mono); font-size:12px; color:var(--muted);}
+  .timeline .desc{font-weight:600;}
+
+  .diagram-wrap{background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:12px; overflow-x:auto;}
+  .diagram-wrap svg{display:block; min-width:640px; width:100%; height:auto;}
+  .ent-box{fill:var(--surface-2); stroke:var(--border);}
+  .ent-title{fill:var(--ink); font-family:var(--font-mono); font-weight:600;}
+  .ent-sub{fill:var(--muted); font-family:var(--font-mono);}
+  .rel-line{stroke:var(--muted); fill:none; stroke-width:1.4;}
+  .rel-label{fill:var(--muted); font-family:var(--font-mono);}
+  .assoc-box{fill:none; stroke:var(--border); stroke-dasharray:4 3;}
+
+  footer.doc-foot{
+    grid-column:1 / -1; margin-top:24px; padding-top:20px; border-top:1px solid var(--border);
+    color:var(--muted); font-size:12.5px; font-family:var(--font-mono);
+    display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;
+  }
+</style>
+
+<div class="shell">
+
+  <header class="doc-head">
+    <div class="title-block">
+      <span class="eyebrow">Internal Reference — v1.0.0</span>
+      <h1>Bouldy</h1>
+      <p class="tagline">Technical specification for the Bouldy API: a FastAPI service for logging bouldering gym sessions, route catalogues, and per-attempt results.</p>
+    </div>
+    <div class="meta-row">
+      <span class="meta-chip">FastAPI 0.140</span>
+      <span class="meta-chip">SQLAlchemy 2.0</span>
+      <span class="meta-chip">PostgreSQL</span>
+      <span class="meta-chip">JWT / OAuth2</span>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <span class="toc-label">Contents</span>
+    <a href="#overview">Overview</a>
+    <a href="#architecture">Architecture</a>
+    <a href="#stack">Tech Stack</a>
+    <a href="#data-model">Data Model</a>
+    <a href="#enums">Enumerations</a>
+    <a href="#auth">Authentication</a>
+    <a href="#api">API Reference</a>
+    <a href="#rules">Business Rules</a>
+    <a href="#migrations">Migration History</a>
+    <a href="#testing">Testing</a>
+    <a href="#gaps">Known Limitations</a>
+  </nav>
+
+  <main>
+
+    <section id="overview">
+      <span class="eyebrow">01 — Purpose</span>
+      <h2>Overview</h2>
+      <p class="lede">Bouldy is a backend API for climbers to track bouldering gym sessions. A user logs a <strong>session</strong> at a <strong>gym</strong>, then records one or more <strong>attempts</strong> against that gym's <strong>routes</strong> — each attempt carrying a result on the standard flash / zone / send / project scale. Gyms maintain a shared route catalogue: grade, colour, wall, setter, and a tagged set of climbing styles (hold type, movement, wall angle, technique).</p>
+      <p>The service is a single FastAPI application backed by PostgreSQL, with schema evolution managed through Alembic and JWT bearer tokens gating user-scoped data.</p>
+    </section>
+
+    <section id="architecture">
+      <span class="eyebrow">02 — System Design</span>
+      <h2>Architecture</h2>
+      <p>The application follows a conventional layered structure. Each layer only talks to the one below it:</p>
+      <div class="grid-2">
+        <div class="card">
+          <h3 style="margin-top:0">Request path</h3>
+          <ul>
+            <li><strong>Routers</strong> (<code>app/routers/*</code>) — HTTP surface: path/method definitions, status codes, HTTPException mapping.</li>
+            <li><strong>Schemas</strong> (<code>app/schemas/*</code>) — Pydantic models validating request bodies and shaping responses.</li>
+            <li><strong>CRUD</strong> (<code>app/crud/*</code>) — query logic, ownership checks, and cross-entity business rules.</li>
+            <li><strong>Models</strong> (<code>app/models/*</code>) — SQLAlchemy 2.0 declarative ORM classes mapped to Postgres tables.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3 style="margin-top:0">Cross-cutting</h3>
+          <ul>
+            <li><strong>Dependency injection</strong> — <code>get_db()</code> yields a scoped <code>Session</code> per request; <code>get_current_user()</code> decodes the bearer token into a <code>User</code> row.</li>
+            <li><strong>Auth boundary</strong> — enforced per-route via <code>Depends(get_current_user)</code>, not global middleware.</li>
+            <li><strong>Ownership scoping</strong> — session and attempt queries always filter by <code>user_id</code> at the CRUD layer, never in the router.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="stack">
+      <span class="eyebrow">03 — Dependencies</span>
+      <h2>Tech Stack</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Concern</th><th>Library</th><th>Version</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td>Web framework</td><td class="mono">fastapi</td><td class="mono">0.140.0</td><td>ASGI, served via uvicorn</td></tr>
+            <tr><td>ASGI server</td><td class="mono">uvicorn</td><td class="mono">0.51.0</td><td>&nbsp;</td></tr>
+            <tr><td>ORM</td><td class="mono">SQLAlchemy</td><td class="mono">2.0.51</td><td>2.0-style <code>Mapped[]</code> declarative models</td></tr>
+            <tr><td>DB driver</td><td class="mono">psycopg</td><td class="mono">3.3.4</td><td>PostgreSQL (Neon, per test fixtures)</td></tr>
+            <tr><td>Migrations</td><td class="mono">alembic</td><td class="mono">1.18.5</td><td>8 linear revisions to date</td></tr>
+            <tr><td>Validation</td><td class="mono">pydantic</td><td class="mono">2.13.4</td><td>request/response schemas</td></tr>
+            <tr><td>Auth tokens</td><td class="mono">PyJWT</td><td class="mono">2.13.0</td><td>HS256, <code>OAuth2PasswordBearer</code></td></tr>
+            <tr><td>Password hashing</td><td class="mono">pwdlib</td><td class="mono">0.3.0</td><td>Argon2 (<code>PasswordHash.recommended()</code>)</td></tr>
+            <tr><td>Config</td><td class="mono">python-dotenv</td><td class="mono">1.2.2</td><td>loads project-root <code>.env</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="data-model">
+      <span class="eyebrow">04 — Schema</span>
+      <h2>Data Model</h2>
+      <p>Six tables: five entities and one association table carrying the many-to-many between routes and climbing styles.</p>
+
+      <div class="diagram-wrap">
+        <svg viewBox="0 0 760 400" role="img" aria-label="Entity relationship diagram of the Bouldy schema">
+          <defs>
+            <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+              <path d="M0,0 L6,3 L0,6 Z" fill="var(--muted)"></path>
+            </marker>
+          </defs>
+
+          <!-- relationship lines (drawn first, under boxes) -->
+          <line class="rel-line" x1="105" y1="76" x2="105" y2="160" marker-end="url(#arrow)"></line>
+          <text class="rel-label" x="112" y="122" font-size="11">1—N</text>
+
+          <line class="rel-line" x1="625" y1="76" x2="625" y2="160" marker-end="url(#arrow)"></line>
+          <text class="rel-label" x="632" y="122" font-size="11">1—N</text>
+
+          <line class="rel-line" x1="555" y1="70" x2="185" y2="168" marker-end="url(#arrow)"></line>
+          <text class="rel-label" x="330" y="105" font-size="11">1—N (gym → sessions)</text>
+
+          <line class="rel-line" x1="130" y1="214" x2="330" y2="298" marker-end="url(#arrow)"></line>
+          <text class="rel-label" x="150" y="266" font-size="11">1—N</text>
+
+          <line class="rel-line" x1="600" y1="214" x2="430" y2="298" marker-end="url(#arrow)"></line>
+          <text class="rel-label" x="490" y="266" font-size="11">1—N</text>
+
+          <line class="rel-line" x1="640" y1="196" x2="678" y2="196" marker-end="url(#arrow)"></line>
+          <line class="rel-line" x1="678" y1="196" x2="678" y2="300" marker-end="url(#arrow)"></line>
+          <text class="rel-label" x="646" y="188" font-size="11">1—N</text>
+
+          <!-- User -->
+          <rect class="ent-box" x="20" y="20" width="170" height="56" rx="4"></rect>
+          <text class="ent-title" x="32" y="42" font-size="13">User</text>
+          <text class="ent-sub" x="32" y="60" font-size="10.5">id · username · email</text>
+
+          <!-- Gym -->
+          <rect class="ent-box" x="540" y="20" width="170" height="56" rx="4"></rect>
+          <text class="ent-title" x="552" y="42" font-size="13">Gym</text>
+          <text class="ent-sub" x="552" y="60" font-size="10.5">id · name · location</text>
+
+          <!-- Session -->
+          <rect class="ent-box" x="20" y="160" width="170" height="56" rx="4"></rect>
+          <text class="ent-title" x="32" y="182" font-size="13">Session</text>
+          <text class="ent-sub" x="32" y="200" font-size="10.5">user_id · gym_id · date</text>
+
+          <!-- Route -->
+          <rect class="ent-box" x="540" y="160" width="170" height="56" rx="4"></rect>
+          <text class="ent-title" x="552" y="182" font-size="13">Route</text>
+          <text class="ent-sub" x="552" y="200" font-size="10.5">gym_id · grade · status</text>
+
+          <!-- Attempt -->
+          <rect class="ent-box" x="280" y="298" width="170" height="56" rx="4"></rect>
+          <text class="ent-title" x="292" y="320" font-size="13">Attempt</text>
+          <text class="ent-sub" x="292" y="338" font-size="10.5">session_id · route_id · result</text>
+
+          <!-- RouteStyleAssociation -->
+          <rect class="assoc-box" x="590" y="300" width="150" height="50" rx="4"></rect>
+          <text class="ent-sub" x="600" y="320" font-size="10.5">RouteStyleAssociation</text>
+          <text class="ent-sub" x="600" y="336" font-size="10">PK(route_id, style)</text>
+        </svg>
+      </div>
+
+      <h3>User</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Field</th><th>Type</th><th>Constraints</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">id</td><td class="mono">int</td><td>primary key</td></tr>
+          <tr><td class="mono">username</td><td class="mono">str(50)</td><td>unique, not null</td></tr>
+          <tr><td class="mono">email</td><td class="mono">str(100)</td><td>unique, not null</td></tr>
+          <tr><td class="mono">password_hash</td><td class="mono">str(255)</td><td>not null, Argon2</td></tr>
+          <tr><td class="mono">current_grade</td><td class="mono">str(10)</td><td>nullable</td></tr>
+          <tr><td class="mono">created_at</td><td class="mono">datetime</td><td>default: now (UTC)</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Gym</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Field</th><th>Type</th><th>Constraints</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">id</td><td class="mono">int</td><td>primary key</td></tr>
+          <tr><td class="mono">name</td><td class="mono">str(100)</td><td>unique</td></tr>
+          <tr><td class="mono">location</td><td class="mono">str(200)</td><td>not null</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Route</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Field</th><th>Type</th><th>Constraints</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">id</td><td class="mono">int</td><td>primary key, indexed</td></tr>
+          <tr><td class="mono">gym_id</td><td class="mono">int</td><td>FK → gyms.id, not null</td></tr>
+          <tr><td class="mono">route_name</td><td class="mono">str(100)</td><td>not null</td></tr>
+          <tr><td class="mono">grade</td><td class="mono">str(10)</td><td>not null (freeform, e.g. V-scale)</td></tr>
+          <tr><td class="mono">colour, wall, setter</td><td class="mono">str</td><td>nullable</td></tr>
+          <tr><td class="mono">set_date, retired_date</td><td class="mono">date</td><td>nullable</td></tr>
+          <tr><td class="mono">status</td><td class="mono">enum</td><td><code>RouteStatus</code>, default <code>active</code></td></tr>
+          <tr><td class="mono">styles</td><td class="mono">relationship</td><td>via <code>RouteStyleAssociation</code>, cascade delete-orphan</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Session</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Field</th><th>Type</th><th>Constraints</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">id</td><td class="mono">int</td><td>primary key</td></tr>
+          <tr><td class="mono">user_id</td><td class="mono">int</td><td>FK → users.id</td></tr>
+          <tr><td class="mono">gym_id</td><td class="mono">int</td><td>FK → gyms.id</td></tr>
+          <tr><td class="mono">session_date</td><td class="mono">date</td><td>not null</td></tr>
+          <tr><td class="mono">duration_minutes</td><td class="mono">int</td><td>not null</td></tr>
+          <tr><td class="mono">notes</td><td class="mono">str</td><td>nullable</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Attempt</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Field</th><th>Type</th><th>Constraints</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">id</td><td class="mono">int</td><td>primary key</td></tr>
+          <tr><td class="mono">session_id</td><td class="mono">int</td><td>FK → sessions.id</td></tr>
+          <tr><td class="mono">route_id</td><td class="mono">int</td><td>FK → routes.id</td></tr>
+          <tr><td class="mono">num_attempts</td><td class="mono">int</td><td>not null, default 1</td></tr>
+          <tr><td class="mono">result</td><td class="mono">enum</td><td><code>AttemptResult</code>, default <code>project</code></td></tr>
+          <tr><td class="mono">notes</td><td class="mono">str</td><td>nullable</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section id="enums">
+      <span class="eyebrow">05 — Vocabulary</span>
+      <h2>Enumerations</h2>
+
+      <div class="enum-block">
+        <h3 style="margin-top:0">AttemptResult</h3>
+        <p>Outcome of an attempt, most-completed first. <code>flash</code> is constrained at the schema layer to exactly one attempt.</p>
+        <div class="chip-row">
+          <span class="chip result"><span class="swatch" style="background:var(--flash)"></span>flash — sent on the first try</span>
+          <span class="chip result"><span class="swatch" style="background:var(--zone)"></span>zone — reached the zone hold, not sent</span>
+          <span class="chip result"><span class="swatch" style="background:var(--send)"></span>send — completed after 2+ attempts</span>
+          <span class="chip result"><span class="swatch" style="background:var(--project)"></span>project — attempted, not yet completed</span>
+        </div>
+      </div>
+
+      <div class="enum-block">
+        <h3>RouteStyle</h3>
+        <p>Free-tagged per route via <code>RouteStyleAssociation</code>; a route can carry any number of styles across four categories.</p>
+        <div class="enum-group-label">Hold type</div>
+        <div class="chip-row">
+          <span class="chip">Crimps</span><span class="chip">Slopers</span><span class="chip">Pinches</span><span class="chip">Jugs</span><span class="chip">Pockets</span>
+        </div>
+        <div class="enum-group-label">Movement</div>
+        <div class="chip-row">
+          <span class="chip">Dyno</span><span class="chip">Deadpoint</span><span class="chip">Static</span><span class="chip">Coordination</span>
+        </div>
+        <div class="enum-group-label">Wall angle</div>
+        <div class="chip-row">
+          <span class="chip">Slab</span><span class="chip">Vertical</span><span class="chip">Overhang</span><span class="chip">Roof</span>
+        </div>
+        <div class="enum-group-label">Technique</div>
+        <div class="chip-row">
+          <span class="chip">Compression</span><span class="chip">Balance</span><span class="chip">Mantle</span><span class="chip">Heel Hook</span><span class="chip">Toe Hook</span><span class="chip">Gaston</span>
+        </div>
+      </div>
+
+      <div class="enum-block">
+        <h3>RouteStatus</h3>
+        <div class="chip-row">
+          <span class="chip">active — default, open on the wall</span>
+          <span class="chip">retired — stripped; stamped via <code>PATCH /routes/{id}/retire</code></span>
+        </div>
+      </div>
+    </section>
+
+    <section id="auth">
+      <span class="eyebrow">06 — Security</span>
+      <h2>Authentication</h2>
+      <p>Standard OAuth2 password flow with a stateless JWT bearer token — no refresh tokens or session store.</p>
+      <div class="grid-3">
+        <div class="card">
+          <h3 style="margin-top:0">Register</h3>
+          <p style="margin:0"><span class="method m-post">POST</span> <code class="mono">/auth/register</code></p>
+          <p style="margin-top:8px">Rejects duplicate email or username with <code>409</code>. Password hashed with Argon2 before storage.</p>
+        </div>
+        <div class="card">
+          <h3 style="margin-top:0">Login</h3>
+          <p style="margin:0"><span class="method m-post">POST</span> <code class="mono">/auth/login</code></p>
+          <p style="margin-top:8px"><code>OAuth2PasswordRequestForm</code> (username = email). Returns <code>{ access_token, token_type: "bearer" }</code>.</p>
+        </div>
+        <div class="card">
+          <h3 style="margin-top:0">Token</h3>
+          <p style="margin:0">HS256, payload <code class="mono">{sub, exp}</code></p>
+          <p style="margin-top:8px">Expiry: <code class="mono">ACCESS_TOKEN_EXPIRE_MINUTES</code> (default 60). Verified per-request by <code>get_current_user</code>.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="api">
+      <span class="eyebrow">07 — Surface</span>
+      <h2>API Reference</h2>
+
+      <h3 style="margin-top:0">Auth</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Method</th><th>Path</th><th>Auth</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><span class="method m-post">POST</span></td><td class="mono">/auth/register</td><td><span class="pill public">public</span></td><td>Create a user account</td></tr>
+          <tr><td><span class="method m-post">POST</span></td><td class="mono">/auth/login</td><td><span class="pill public">public</span></td><td>Exchange credentials for a bearer token</td></tr>
+          <tr><td><span class="method m-get">GET</span></td><td class="mono">/auth/me</td><td><span class="pill auth">bearer</span></td><td>Return the authenticated user</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Gyms</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Method</th><th>Path</th><th>Auth</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><span class="method m-post">POST</span></td><td class="mono">/gyms/</td><td><span class="pill public">public</span></td><td>Create a gym; <code>409</code> if name taken</td></tr>
+          <tr><td><span class="method m-get">GET</span></td><td class="mono">/gyms/</td><td><span class="pill public">public</span></td><td>List all gyms</td></tr>
+          <tr><td><span class="method m-get">GET</span></td><td class="mono">/gyms/{id}</td><td><span class="pill public">public</span></td><td>Fetch a gym</td></tr>
+          <tr><td><span class="method m-get">GET</span></td><td class="mono">/gyms/{id}/routes</td><td><span class="pill public">public</span></td><td>List a gym's routes</td></tr>
+          <tr><td><span class="method m-put">PUT</span></td><td class="mono">/gyms/{id}</td><td><span class="pill public">public</span></td><td>Update name / location</td></tr>
+          <tr><td><span class="method m-delete">DELETE</span></td><td class="mono">/gyms/{id}</td><td><span class="pill public">public</span></td><td>Delete; <code>409</code> if routes still reference it</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Routes</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Method</th><th>Path</th><th>Auth</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><span class="method m-post">POST</span></td><td class="mono">/routes/</td><td><span class="pill public">public</span></td><td>Create a route with a style list</td></tr>
+          <tr><td><span class="method m-get">GET</span></td><td class="mono">/routes/</td><td><span class="pill public">public</span></td><td>List all routes, newest first</td></tr>
+          <tr><td><span class="method m-get">GET</span></td><td class="mono">/routes/{id}</td><td><span class="pill public">public</span></td><td>Fetch a route</td></tr>
+          <tr><td><span class="method m-put">PUT</span></td><td class="mono">/routes/{id}</td><td><span class="pill public">public</span></td><td>Update fields; replaces style set if provided</td></tr>
+          <tr><td><span class="method m-delete">DELETE</span></td><td class="mono">/routes/{id}</td><td><span class="pill public">public</span></td><td>Delete a route</td></tr>
+          <tr><td><span class="method m-patch">PATCH</span></td><td class="mono">/routes/{id}/retire</td><td><span class="pill public">public</span></td><td>Set status → <code>retired</code>, stamp today's date</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Sessions</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Method</th><th>Path</th><th>Auth</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><span class="method m-post">POST</span></td><td class="mono">/sessions/</td><td><span class="pill auth">bearer</span></td><td>Log a session at a gym</td></tr>
+          <tr><td><span class="method m-get">GET</span></td><td class="mono">/sessions/</td><td><span class="pill auth">bearer</span></td><td>List the caller's sessions</td></tr>
+          <tr><td><span class="method m-get">GET</span></td><td class="mono">/sessions/{id}</td><td><span class="pill auth">bearer</span></td><td>Fetch one of the caller's sessions</td></tr>
+          <tr><td><span class="method m-put">PUT</span></td><td class="mono">/sessions/{id}</td><td><span class="pill auth">bearer</span></td><td>Update duration / notes</td></tr>
+          <tr><td><span class="method m-delete">DELETE</span></td><td class="mono">/sessions/{id}</td><td><span class="pill auth">bearer</span></td><td>Delete a session</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3>Attempts</h3>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Method</th><th>Path</th><th>Auth</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><span class="method m-post">POST</span></td><td class="mono">/sessions/{session_id}/attempts</td><td><span class="pill auth">bearer</span></td><td>Log an attempt against a route</td></tr>
+          <tr><td><span class="method m-get">GET</span></td><td class="mono">/sessions/{session_id}/attempts</td><td><span class="pill auth">bearer</span></td><td>List attempts for a session</td></tr>
+          <tr><td><span class="method m-get">GET</span></td><td class="mono">/attempts/{id}</td><td><span class="pill auth">bearer</span></td><td>Fetch one attempt</td></tr>
+          <tr><td><span class="method m-patch">PATCH</span></td><td class="mono">/attempts/{id}</td><td><span class="pill auth">bearer</span></td><td>Update attempt count / result / notes</td></tr>
+          <tr><td><span class="method m-delete">DELETE</span></td><td class="mono">/attempts/{id}</td><td><span class="pill auth">bearer</span></td><td>Delete an attempt</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section id="rules">
+      <span class="eyebrow">08 — Invariants</span>
+      <h2>Business Rules</h2>
+      <ul class="rule-list">
+        <li><span class="num">01</span><span><strong>Flash requires one attempt.</strong> <code>AttemptCreate</code> raises a validation error if <code>result = flash</code> and <code>num_attempts != 1</code> — enforced in the Pydantic layer, before the row is ever built.</span></li>
+        <li><span class="num">02</span><span><strong>Attempt route must match session gym.</strong> <code>create_attempt</code> rejects the attempt if the route's <code>gym_id</code> differs from the session's <code>gym_id</code> — you can't log a send at a gym you didn't check into.</span></li>
+        <li><span class="num">03</span><span><strong>Sessions and attempts are owner-scoped.</strong> Every query filters on <code>Session.user_id == current_user.id</code>; a mismatch returns <code>404</code>, not <code>403</code>, so a session's existence isn't leaked to other users.</span></li>
+        <li><span class="num">04</span><span><strong>Gyms with routes can't be deleted.</strong> <code>delete_gym</code> raises <code>GymHasRoutesError</code>, mapped to <code>409 Conflict</code>, if any route still references the gym.</span></li>
+        <li><span class="num">05</span><span><strong>Retiring is its own action.</strong> <code>status</code> isn't part of <code>RouteUpdate</code>; only <code>PATCH /routes/{id}/retire</code> can move a route to <code>retired</code>, and it always stamps <code>retired_date</code> to today.</span></li>
+      </ul>
+    </section>
+
+    <section id="migrations">
+      <span class="eyebrow">09 — History</span>
+      <h2>Migration History</h2>
+      <p>Eight linear Alembic revisions, oldest first:</p>
+      <ol class="timeline">
+        <li><span class="rev">8e51f40f1c2e</span> — <span class="desc">initial schema</span></li>
+        <li><span class="rev">3e859f5db2ec</span> — <span class="desc">initial schema (rebase/redo)</span></li>
+        <li><span class="rev">2bee76514134</span> — <span class="desc">update session model</span></li>
+        <li><span class="rev">d66c3e17fad6</span> — <span class="desc">add route status</span></li>
+        <li><span class="rev">0aeaa87e0693</span> — <span class="desc">add route name</span></li>
+        <li><span class="rev">0b8be4a22fee</span> — <span class="desc">add result status (AttemptResult)</span></li>
+        <li><span class="rev">957601bed621</span> — <span class="desc">add route name to routes, fix missing column</span></li>
+        <li><span class="rev">f85cf24f0130</span> — <span class="desc">fix RouteStyle enum labels to match model</span></li>
+      </ol>
+    </section>
+
+    <section id="testing">
+      <span class="eyebrow">10 — Verification</span>
+      <h2>Testing</h2>
+      <p>~720 lines across five suites (<code class="mono">test_auth</code>, <code class="mono">test_gyms</code>, <code class="mono">test_routes</code>, <code class="mono">test_sessions</code>, <code class="mono">test_attempts</code>), run with <code>pytest</code> against FastAPI's <code>TestClient</code>.</p>
+      <div class="callout">
+        <p><strong>Isolation:</strong> <code>get_db</code> is overridden to a <code>StaticPool</code> in-memory SQLite engine per test run — never Neon — with <code>PRAGMA foreign_keys=ON</code> enabled explicitly, since SQLite ignores FK constraints by default.</p>
+        <p><strong>Auth bypass:</strong> <code>get_current_user</code> can be overridden to a fixed <code>User</code> fixture, so protected endpoints are tested without minting real JWTs.</p>
+      </div>
+    </section>
+
+    <section id="gaps">
+      <span class="eyebrow">11 — Open Items</span>
+      <h2>Known Limitations</h2>
+      <div class="callout warn">
+        <p><strong>Gym and route catalogue endpoints carry no auth dependency.</strong> Anyone can create, edit, or delete gyms and routes without a token, while sessions and attempts are strictly owner-scoped — an inconsistency worth resolving before this is exposed beyond a trusted client.</p>
+      </div>
+      <ul>
+        <li><strong>SQL echo is on in the shared engine</strong> (<code>echo=True</code> in <code>app/database.py</code>) — fine for development, noisy and unwanted in production logs.</li>
+        <li><strong>No user-update endpoint is wired up</strong> — <code>UserUpdate</code> exists in schemas and <code>app/routers/users.py</code> is registered but empty.</li>
+        <li><strong>Two "initial schema" migrations</strong> (<code>8e51f40f1c2e</code>, <code>3e859f5db2ec</code>) suggest an early rebase; harmless once applied, but worth a comment for future readers of the migration log.</li>
+        <li><strong>Root-level <code>app/schemas.py</code></strong> is an empty file alongside the <code>app/schemas/</code> package — dead weight that can be removed.</li>
+      </ul>
+    </section>
+
+  </main>
+
+  <footer class="doc-foot">
+    <span>Bouldy API — internal technical specification</span>
+    <span>Generated from repository state, branch <code>develop</code></span>
+  </footer>
+
+</div>
