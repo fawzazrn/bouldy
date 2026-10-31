@@ -7,6 +7,9 @@ from fastapi import (
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.dependencies.auth import ensure_can_manage_gym, get_current_user
+from app.models.user import User
+from app.crud.grading import GradeValidationError
 from app.crud.route import (
     create_route,
     delete_route,
@@ -35,6 +38,8 @@ def route_to_response(route):
         "gym_id": route.gym_id,
         "route_name": route.route_name,
         "grade": route.grade,
+        "grade_id": route.grade_id,
+        "route_kind": route.route_kind,
         "colour": route.colour,
         "wall": route.wall,
         "setter": route.setter,
@@ -48,6 +53,18 @@ def route_to_response(route):
     }
 
 
+def _get_route_or_404(db: Session, route_id: int):
+    route = get_route(db=db, route_id=route_id)
+
+    if route is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Route not found",
+        )
+
+    return route
+
+
 @router.post(
     "/",
     response_model=RouteResponse,
@@ -56,11 +73,20 @@ def route_to_response(route):
 def create_new_route(
     route: RouteCreate,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    db_route = create_route(
-        db=db,
-        route=route,
-    )
+    ensure_can_manage_gym(current_user, route.gym_id)
+
+    try:
+        db_route = create_route(
+            db=db,
+            route=route,
+        )
+    except GradeValidationError as error:
+        raise HTTPException(
+            status_code=422,
+            detail=str(error),
+        )
 
     if db_route is None:
         raise HTTPException(
@@ -116,12 +142,27 @@ def update_existing_route(
     route_id: int,
     route_update: RouteUpdate,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    route = update_route(
-        db=db,
-        route_id=route_id,
-        route_update=route_update,
-    )
+    existing = _get_route_or_404(db, route_id)
+
+    ensure_can_manage_gym(current_user, existing.gym_id)
+
+    # Moving a route to another gym needs rights over both.
+    if route_update.gym_id is not None:
+        ensure_can_manage_gym(current_user, route_update.gym_id)
+
+    try:
+        route = update_route(
+            db=db,
+            route_id=route_id,
+            route_update=route_update,
+        )
+    except GradeValidationError as error:
+        raise HTTPException(
+            status_code=422,
+            detail=str(error),
+        )
 
     if route is None:
         raise HTTPException(
@@ -139,7 +180,13 @@ def update_existing_route(
 def remove_route(
     route_id: int,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
+    ensure_can_manage_gym(
+        current_user,
+        _get_route_or_404(db, route_id).gym_id,
+    )
+
     route = delete_route(
         db=db,
         route_id=route_id,
@@ -160,7 +207,13 @@ def remove_route(
 def retire_existing_route(
     route_id: int,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
+    ensure_can_manage_gym(
+        current_user,
+        _get_route_or_404(db, route_id).gym_id,
+    )
+
     route = retire_route(
         db=db,
         route_id=route_id,

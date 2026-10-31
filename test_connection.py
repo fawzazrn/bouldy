@@ -1,14 +1,23 @@
+import os
+from pathlib import Path
+
+from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
 
-DATABASE_URL = "postgresql+psycopg2://neondb_owner:npg_sx3eHVujr5ZS@ep-purple-fire-azzsq5pl.c-3.ap-southeast-1.aws.neon.tech/neondb?sslmode=require"
+load_dotenv(Path(__file__).resolve().parent / ".env")
+
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+if not DATABASE_URL:
+    raise SystemExit("DATABASE_URL is not set. Add it to .env or export it.")
 
 engine = create_engine(DATABASE_URL)
 
 try:
     with engine.connect() as conn:
         result = conn.execute(text("SELECT version();"))
-        print("✅ Connected!")
+        print("Connected!")
         print(result.fetchone()[0])
 except Exception as e:
-    print("❌ Connection failed")
+    print("Connection failed")
     print(e)

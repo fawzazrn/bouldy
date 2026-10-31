@@ -34,3 +34,38 @@ class AttemptResult(str, Enum):
 class RouteStatus(str, Enum):
     ACTIVE = "active"
     RETIRED = "retired"
+
+
+class RouteKind(str, Enum):
+    """Special route types. Not grades, and not the climber's own project."""
+
+    WILDCARD = "wildcard"
+    SIGNATURE_SEND = "signature_send"
+    GYM_PROJECT = "gym_project"
+
+
+# Short text copied into the legacy routes.grade column (max 10 characters)
+# when a route has a kind but no fixed grade.
+ROUTE_KIND_GRADE_TEXT = {
+    RouteKind.WILDCARD: "Wildcard",
+    RouteKind.SIGNATURE_SEND: "Signature",
+    RouteKind.GYM_PROJECT: "Project",
+}
+
+
+class UserRole(str, Enum):
+    USER = "user"
+    GYM_ADMIN = "gym_admin"
+    SUPER_ADMIN = "super_admin"
+
+
+class GradeScaleKind(str, Enum):
+    NUMERIC = "numeric"
+    COLOUR_TIER = "colour_tier"
+
+
+class GradeBand(str, Enum):
+    BEGINNER = "beginner"
+    INTERMEDIATE = "intermediate"
+    ADVANCED = "advanced"
+    EXPERT = "expert"

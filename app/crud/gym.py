@@ -1,10 +1,22 @@
 from sqlalchemy.orm import Session
 
+from app.models.grading import GymBrand
 from app.models.gym import Gym
 from app.schemas.gym import GymCreate, GymUpdate
 
 
+class BrandNotFoundError(Exception):
+    """Raised when a gym points at a brand that does not exist."""
+
+
+def _check_brand(db: Session, brand_id: int | None):
+    if brand_id is not None and db.get(GymBrand, brand_id) is None:
+        raise BrandNotFoundError(brand_id)
+
+
 def create_gym(db: Session, gym: GymCreate) -> Gym:
+    _check_brand(db, gym.brand_id)
+
     db_gym = Gym(**gym.model_dump())
 
     db.add(db_gym)
@@ -37,6 +49,8 @@ def update_gym(
         return None
 
     update_data = gym_update.model_dump(exclude_unset=True)
+
+    _check_brand(db, update_data.get("brand_id"))
 
     for key, value in update_data.items():
         setattr(gym, key, value)

@@ -14,7 +14,7 @@ from app.crud.user import (
     get_user_by_username,
 )
 from app.schemas.auth import TokenResponse
-from app.schemas.user import UserCreate, UserResponse
+from app.schemas.user import MeResponse, UserCreate, UserResponse
 from app.utils.security import (
     create_access_token,
     verify_password,
@@ -87,7 +87,7 @@ def login(
 
 @router.get(
     "/me",
-    response_model=UserResponse,
+    response_model=MeResponse,
 )
 def get_me(
     current_user: User = Depends(get_current_user),
