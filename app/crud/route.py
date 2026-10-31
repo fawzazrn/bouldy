@@ -6,6 +6,7 @@ from app.models.route import Route
 from app.models.route_style_association import RouteStyleAssociation
 from app.schemas.route import RouteCreate, RouteUpdate
 from app.models.enums import RouteStatus
+from app.crud.grading import GradeValidationError, resolve_route_grade
 
 
 def create_route(
@@ -17,11 +18,24 @@ def create_route(
     if gym is None:
         return None
 
-    route_data = route.model_dump(
-        exclude={"styles"}
+    grade_text, grade_id, route_kind = resolve_route_grade(
+        db,
+        gym,
+        route.grade,
+        route.grade_id,
+        route.route_kind,
     )
 
-    db_route = Route(**route_data)
+    route_data = route.model_dump(
+        exclude={"styles", "grade", "grade_id", "route_kind"}
+    )
+
+    db_route = Route(
+        **route_data,
+        grade=grade_text,
+        grade_id=grade_id,
+        route_kind=route_kind,
+    )
 
     db_route.styles = [
         RouteStyleAssociation(style=style)
@@ -83,6 +97,34 @@ def update_route(
         exclude_unset=True,
         exclude={"styles"},
     )
+
+    grade_fields = {"gym_id", "grade", "grade_id", "route_kind"}
+
+    if grade_fields & update_data.keys():
+        gym = db.query(Gym).filter(
+            Gym.id == update_data.get("gym_id", db_route.gym_id)
+        ).first()
+
+        if gym is None:
+            raise GradeValidationError("Gym not found")
+
+        # Sending only free-text `grade` means the old grade_id no longer applies.
+        if "grade" in update_data and "grade_id" not in update_data:
+            effective_grade_id = None
+        else:
+            effective_grade_id = update_data.get("grade_id", db_route.grade_id)
+
+        grade_text, grade_id, route_kind = resolve_route_grade(
+            db,
+            gym,
+            update_data.get("grade", db_route.grade),
+            effective_grade_id,
+            update_data.get("route_kind", db_route.route_kind),
+        )
+
+        update_data["grade"] = grade_text
+        update_data["grade_id"] = grade_id
+        update_data["route_kind"] = route_kind
 
     for key, value in update_data.items():
         setattr(db_route, key, value)

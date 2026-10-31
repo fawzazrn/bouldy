@@ -7,6 +7,7 @@ from fastapi import (
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.crud.grading import GradeValidationError
 from app.crud.route import (
     create_route,
     delete_route,
@@ -35,6 +36,8 @@ def route_to_response(route):
         "gym_id": route.gym_id,
         "route_name": route.route_name,
         "grade": route.grade,
+        "grade_id": route.grade_id,
+        "route_kind": route.route_kind,
         "colour": route.colour,
         "wall": route.wall,
         "setter": route.setter,
@@ -57,10 +60,16 @@ def create_new_route(
     route: RouteCreate,
     db: Session = Depends(get_db),
 ):
-    db_route = create_route(
-        db=db,
-        route=route,
-    )
+    try:
+        db_route = create_route(
+            db=db,
+            route=route,
+        )
+    except GradeValidationError as error:
+        raise HTTPException(
+            status_code=422,
+            detail=str(error),
+        )
 
     if db_route is None:
         raise HTTPException(
@@ -117,11 +126,17 @@ def update_existing_route(
     route_update: RouteUpdate,
     db: Session = Depends(get_db),
 ):
-    route = update_route(
-        db=db,
-        route_id=route_id,
-        route_update=route_update,
-    )
+    try:
+        route = update_route(
+            db=db,
+            route_id=route_id,
+            route_update=route_update,
+        )
+    except GradeValidationError as error:
+        raise HTTPException(
+            status_code=422,
+            detail=str(error),
+        )
 
     if route is None:
         raise HTTPException(

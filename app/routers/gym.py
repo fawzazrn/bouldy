@@ -10,7 +10,10 @@ from app.crud.gym import (
     update_gym,
     delete_gym,
     GymHasRoutesError,
+    BrandNotFoundError,
 )
+from app.crud.grading import get_gym_grading
+from app.schemas.grading import GymGradingResponse
 from app.crud.route import get_routes_by_gym
 from app.schemas.gym import (
     GymCreate,
@@ -41,7 +44,13 @@ def create_new_gym(
             detail="Gym name already exists",
         )
 
-    return create_gym(db, gym)
+    try:
+        return create_gym(db, gym)
+    except BrandNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Brand not found",
+        )
 
 
 @router.get(
@@ -71,6 +80,25 @@ def read_gym(
         )
 
     return gym
+
+
+@router.get(
+    "/{gym_id}/grades",
+    response_model=GymGradingResponse,
+)
+def read_gym_grades(
+    gym_id: int,
+    db: Session = Depends(get_db),
+):
+    gym = get_gym(db, gym_id)
+
+    if gym is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Gym not found",
+        )
+
+    return get_gym_grading(gym)
 
 
 @router.get(
@@ -106,11 +134,17 @@ def update_existing_gym(
     gym_update: GymUpdate,
     db: Session = Depends(get_db),
 ):
-    gym = update_gym(
-        db=db,
-        gym_id=gym_id,
-        gym_update=gym_update,
-    )
+    try:
+        gym = update_gym(
+            db=db,
+            gym_id=gym_id,
+            gym_update=gym_update,
+        )
+    except BrandNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Brand not found",
+        )
 
     if gym is None:
         raise HTTPException(

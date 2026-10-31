@@ -12,7 +12,6 @@ from sqlalchemy.orm import sessionmaker
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
 DATABASE_URL = os.getenv("DATABASE_URL")
-print(DATABASE_URL)
 
 
 class Base(DeclarativeBase):

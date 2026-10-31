@@ -35,6 +35,20 @@ class Route(Base):
         nullable=False,
     )
 
+    # Locked grade from the gym brand's scale. Nullable: older routes only
+    # have the free-text `grade` above, and wildcard routes have no fixed grade.
+    grade_id: Mapped[int | None] = mapped_column(
+        ForeignKey("grades.id"),
+        nullable=True,
+    )
+
+    # wildcard, signature_send or gym_project. Separate from the grade, and
+    # from the climber's personal "project" attempt result.
+    route_kind: Mapped[str | None] = mapped_column(
+        String(30),
+        nullable=True,
+    )
+
     colour: Mapped[str] = mapped_column(
         String(20),
         nullable=True,
@@ -86,5 +100,7 @@ class Route(Base):
     )
 
     gym = relationship("Gym", back_populates="routes")
+
+    grade_ref = relationship("Grade")
 
     attempts = relationship("Attempt", back_populates="route")
