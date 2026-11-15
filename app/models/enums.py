@@ -53,6 +53,12 @@ ROUTE_KIND_GRADE_TEXT = {
 }
 
 
+class UserRole(str, Enum):
+    USER = "user"
+    GYM_ADMIN = "gym_admin"
+    SUPER_ADMIN = "super_admin"
+
+
 class GradeScaleKind(str, Enum):
     NUMERIC = "numeric"
     COLOUR_TIER = "colour_tier"

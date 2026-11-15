@@ -15,8 +15,8 @@ def gym(db):
 
 
 @pytest.fixture
-def route(client, gym):
-    resp = client.post(
+def route(admin_client, gym):
+    resp = admin_client.post(
         "/routes/",
         json={
             "gym_id": gym.id,
@@ -37,24 +37,24 @@ def test_create_route_defaults_to_active(route):
     assert sorted(route["styles"]) == ["Crimps", "Slopers"]
 
 
-def test_get_route(client, route):
-    resp = client.get(f"/routes/{route['id']}")
+def test_get_route(admin_client, route):
+    resp = admin_client.get(f"/routes/{route['id']}")
     assert resp.status_code == 200
     assert resp.json()["route_name"] == "Blue Traverse"
 
 
-def test_get_missing_route_is_404(client):
-    assert client.get("/routes/4242").status_code == 404
+def test_get_missing_route_is_404(admin_client):
+    assert admin_client.get("/routes/4242").status_code == 404
 
 
-def test_list_routes(client, route):
-    resp = client.get("/routes/")
+def test_list_routes(admin_client, route):
+    resp = admin_client.get("/routes/")
     assert resp.status_code == 200
     assert any(r["id"] == route["id"] for r in resp.json())
 
 
-def test_update_route_grade_and_styles(client, route):
-    resp = client.put(
+def test_update_route_grade_and_styles(admin_client, route):
+    resp = admin_client.put(
         f"/routes/{route['id']}",
         json={"grade": "V6", "styles": ["Pinches"]},
     )
@@ -64,21 +64,21 @@ def test_update_route_grade_and_styles(client, route):
     assert body["styles"] == ["Pinches"]
 
 
-def test_retire_route_sets_status_and_date(client, route):
-    resp = client.patch(f"/routes/{route['id']}/retire")
+def test_retire_route_sets_status_and_date(admin_client, route):
+    resp = admin_client.patch(f"/routes/{route['id']}/retire")
     assert resp.status_code == 200
     body = resp.json()
     assert body["status"] == "retired"
     assert body["retired_date"] is not None
 
 
-def test_delete_route(client, route):
-    assert client.delete(f"/routes/{route['id']}").status_code == 204
-    assert client.get(f"/routes/{route['id']}").status_code == 404
+def test_delete_route(admin_client, route):
+    assert admin_client.delete(f"/routes/{route['id']}").status_code == 204
+    assert admin_client.get(f"/routes/{route['id']}").status_code == 404
 
 
-def test_create_route_rejects_unknown_style(client, gym):
-    resp = client.post(
+def test_create_route_rejects_unknown_style(admin_client, gym):
+    resp = admin_client.post(
         "/routes/",
         json={
             "gym_id": gym.id,
@@ -90,8 +90,8 @@ def test_create_route_rejects_unknown_style(client, gym):
     assert resp.status_code == 422
 
 
-def test_create_route_missing_gym_is_400(client):
-    resp = client.post(
+def test_create_route_missing_gym_is_400(admin_client):
+    resp = admin_client.post(
         "/routes/",
         json={
             "gym_id": 9999,

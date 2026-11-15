@@ -115,3 +115,40 @@ def auth_client(client, user):
 def token(user):
     """A real signed JWT for `user` (use when testing the auth layer itself)."""
     return create_access_token(user.id)
+
+
+def make_user(db, username, role="user", gym_ids=()):
+    """Persist a user with a role and, for gym admins, the gyms they manage."""
+    from app.models.user import UserGymAdmin
+
+    u = User(
+        username=username,
+        email=f"{username}@example.com",
+        password_hash=hash_password("password123"),
+        role=role,
+    )
+    db.add(u)
+    db.commit()
+    for gym_id in gym_ids:
+        db.add(UserGymAdmin(user_id=u.id, gym_id=gym_id))
+    db.commit()
+    db.refresh(u)
+    return u
+
+
+@pytest.fixture
+def super_admin(db):
+    return make_user(db, "boss", role="super_admin")
+
+
+@pytest.fixture
+def admin_client(client, super_admin):
+    """TestClient acting as a super admin, for tests of gym and route writes."""
+    app.dependency_overrides[get_current_user] = lambda: super_admin
+    yield client
+    app.dependency_overrides.pop(get_current_user, None)
+
+
+def auth_headers(user):
+    """Real bearer token headers, for tests of the permission layer itself."""
+    return {"Authorization": f"Bearer {create_access_token(user.id)}"}

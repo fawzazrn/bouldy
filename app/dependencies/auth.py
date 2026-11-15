@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.crud.user import get_user
+from app.models.enums import UserRole
 
 
 SECRET_KEY = os.getenv("JWT_SECRET_KEY")
@@ -56,3 +57,37 @@ def get_current_user(
         raise credentials_exception
 
     return user
+
+
+def is_super_admin(user) -> bool:
+    return user.role == UserRole.SUPER_ADMIN.value
+
+
+def can_manage_gym(user, gym_id: int) -> bool:
+    """Super admins manage every gym. Gym admins only the gyms linked to them."""
+    if is_super_admin(user):
+        return True
+
+    return (
+        user.role == UserRole.GYM_ADMIN.value
+        and gym_id in user.admin_gym_ids
+    )
+
+
+def require_super_admin(user=Depends(get_current_user)):
+    if not is_super_admin(user):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Super admin access required",
+        )
+
+    return user
+
+
+def ensure_can_manage_gym(user, gym_id: int) -> None:
+    """Raise 403 unless the user may edit this gym and its routes."""
+    if not can_manage_gym(user, gym_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not an admin of this gym",
+        )

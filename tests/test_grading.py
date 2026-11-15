@@ -120,40 +120,40 @@ def test_numeric_scales_have_no_invented_equivalents_or_bands(seeded):
 # --- read endpoints --------------------------------------------------------
 
 
-def test_list_brands(client, seeded):
-    resp = client.get("/brands/")
+def test_list_brands(admin_client, seeded):
+    resp = admin_client.get("/brands/")
 
     assert resp.status_code == 200
     assert [b["name"] for b in resp.json()] == ["Batuu", "Boulder Story", "Camp 5"]
 
 
-def test_brand_detail_includes_ordered_grades(client, seeded):
+def test_brand_detail_includes_ordered_grades(admin_client, seeded):
     brand_id = seeded.query(GymBrand).filter(GymBrand.slug == "camp-5").one().id
 
-    body = client.get(f"/brands/{brand_id}").json()
+    body = admin_client.get(f"/brands/{brand_id}").json()
 
     assert [g["label"] for g in body["grade_scale"]["grades"]][:2] == ["Pink", "Light Blue"]
     assert body["grade_scale"]["kind"] == "colour_tier"
 
 
-def test_missing_brand_is_404(client):
-    assert client.get("/brands/999").status_code == 404
+def test_missing_brand_is_404(admin_client):
+    assert admin_client.get("/brands/999").status_code == 404
 
 
-def test_gym_grades_endpoint_for_branded_gym(client, seeded):
-    body = client.get(f"/gyms/{gym_id(seeded, 'Boulder Story')}/grades").json()
+def test_gym_grades_endpoint_for_branded_gym(admin_client, seeded):
+    body = admin_client.get(f"/gyms/{gym_id(seeded, 'Boulder Story')}/grades").json()
 
     assert body["grade_required"] is True
     assert len(body["scale"]["grades"]) == 12
     assert "signature_send" in body["allowed_route_kinds"]
 
 
-def test_gym_grades_endpoint_for_unbranded_gym(client, db):
+def test_gym_grades_endpoint_for_unbranded_gym(admin_client, db):
     db.add(Gym(name="Plain Gym", location="Penang"))
     db.commit()
     plain = db.query(Gym).one().id
 
-    body = client.get(f"/gyms/{plain}/grades").json()
+    body = admin_client.get(f"/gyms/{plain}/grades").json()
 
     assert body == {
         "gym_id": plain,
@@ -164,8 +164,8 @@ def test_gym_grades_endpoint_for_unbranded_gym(client, db):
     }
 
 
-def test_gym_response_includes_address_fields(client, seeded):
-    body = client.get(f"/gyms/{gym_id(seeded, 'Batuu')}").json()
+def test_gym_response_includes_address_fields(admin_client, seeded):
+    body = admin_client.get(f"/gyms/{gym_id(seeded, 'Batuu')}").json()
 
     assert body["brand_id"] is not None
     assert "Damansara Utama" in body["address"]
@@ -175,29 +175,29 @@ def test_gym_response_includes_address_fields(client, seeded):
 # --- route validation ------------------------------------------------------
 
 
-def test_route_with_locked_grade_mirrors_label(client, seeded):
+def test_route_with_locked_grade_mirrors_label(admin_client, seeded):
     gid = gym_id(seeded, "Camp5 Ombak")
     yellow = grade_id(seeded, "Camp 5 Colour Tiers", "Yellow")
 
-    resp = client.post("/routes/", json=route_payload(gid, grade_id=yellow))
+    resp = admin_client.post("/routes/", json=route_payload(gid, grade_id=yellow))
 
     assert resp.status_code == 201
     assert resp.json()["grade"] == "Yellow"
     assert resp.json()["grade_id"] == yellow
 
 
-def test_locked_grade_overrides_conflicting_free_text(client, seeded):
+def test_locked_grade_overrides_conflicting_free_text(admin_client, seeded):
     gid = gym_id(seeded, "Batuu")
     seven = grade_id(seeded, "Batuu 1-15", "7")
 
-    resp = client.post("/routes/", json=route_payload(gid, grade_id=seven, grade="V9"))
+    resp = admin_client.post("/routes/", json=route_payload(gid, grade_id=seven, grade="V9"))
 
     assert resp.status_code == 201
     assert resp.json()["grade"] == "7"
 
 
-def test_branded_gym_rejects_free_text_grade(client, seeded):
-    resp = client.post(
+def test_branded_gym_rejects_free_text_grade(admin_client, seeded):
+    resp = admin_client.post(
         "/routes/", json=route_payload(gym_id(seeded, "Batuu"), grade="V3")
     )
 
@@ -205,10 +205,10 @@ def test_branded_gym_rejects_free_text_grade(client, seeded):
     assert "grade_id" in resp.json()["detail"]
 
 
-def test_grade_from_another_brand_is_rejected(client, seeded):
+def test_grade_from_another_brand_is_rejected(admin_client, seeded):
     camp5_yellow = grade_id(seeded, "Camp 5 Colour Tiers", "Yellow")
 
-    resp = client.post(
+    resp = admin_client.post(
         "/routes/",
         json=route_payload(gym_id(seeded, "Batuu"), grade_id=camp5_yellow),
     )
@@ -216,8 +216,8 @@ def test_grade_from_another_brand_is_rejected(client, seeded):
     assert resp.status_code == 422
 
 
-def test_unknown_grade_id_is_rejected(client, seeded):
-    resp = client.post(
+def test_unknown_grade_id_is_rejected(admin_client, seeded):
+    resp = admin_client.post(
         "/routes/",
         json=route_payload(gym_id(seeded, "Batuu"), grade_id=99999),
     )
@@ -225,12 +225,12 @@ def test_unknown_grade_id_is_rejected(client, seeded):
     assert resp.status_code == 422
 
 
-def test_grade_id_on_unbranded_gym_is_rejected(client, seeded, db):
+def test_grade_id_on_unbranded_gym_is_rejected(admin_client, seeded, db):
     db.add(Gym(name="Plain Gym", location="Penang"))
     db.commit()
     plain = gym_id(db, "Plain Gym")
 
-    resp = client.post(
+    resp = admin_client.post(
         "/routes/",
         json=route_payload(plain, grade_id=grade_id(db, "Batuu 1-15", "3")),
     )
@@ -238,11 +238,11 @@ def test_grade_id_on_unbranded_gym_is_rejected(client, seeded, db):
     assert resp.status_code == 422
 
 
-def test_unbranded_gym_keeps_free_text_grades(client, db):
+def test_unbranded_gym_keeps_free_text_grades(admin_client, db):
     db.add(Gym(name="Plain Gym", location="Penang"))
     db.commit()
 
-    resp = client.post(
+    resp = admin_client.post(
         "/routes/",
         json=route_payload(db.query(Gym).one().id, grade="V4"),
     )
@@ -252,17 +252,17 @@ def test_unbranded_gym_keeps_free_text_grades(client, db):
     assert resp.json()["grade_id"] is None
 
 
-def test_unbranded_gym_still_requires_a_grade(client, db):
+def test_unbranded_gym_still_requires_a_grade(admin_client, db):
     db.add(Gym(name="Plain Gym", location="Penang"))
     db.commit()
 
-    resp = client.post("/routes/", json=route_payload(db.query(Gym).one().id))
+    resp = admin_client.post("/routes/", json=route_payload(db.query(Gym).one().id))
 
     assert resp.status_code == 422
 
 
-def test_wildcard_route_needs_no_grade(client, seeded):
-    resp = client.post(
+def test_wildcard_route_needs_no_grade(admin_client, seeded):
+    resp = admin_client.post(
         "/routes/",
         json=route_payload(gym_id(seeded, "Batuu"), route_kind="wildcard"),
     )
@@ -274,24 +274,24 @@ def test_wildcard_route_needs_no_grade(client, seeded):
     assert body["grade"] == "Wildcard"
 
 
-def test_route_kind_must_be_allowed_for_brand(client, seeded):
+def test_route_kind_must_be_allowed_for_brand(admin_client, seeded):
     # Batuu only has wildcard.
-    resp = client.post(
+    resp = admin_client.post(
         "/routes/",
         json=route_payload(gym_id(seeded, "Batuu"), route_kind="signature_send"),
     )
     assert resp.status_code == 422
 
     # Camp 5 has none.
-    resp = client.post(
+    resp = admin_client.post(
         "/routes/",
         json=route_payload(gym_id(seeded, "Camp5 Jumpa"), route_kind="wildcard"),
     )
     assert resp.status_code == 422
 
 
-def test_boulder_story_gym_project_can_carry_its_own_grade(client, seeded):
-    resp = client.post(
+def test_boulder_story_gym_project_can_carry_its_own_grade(admin_client, seeded):
+    resp = admin_client.post(
         "/routes/",
         json=route_payload(
             gym_id(seeded, "Boulder Story"),
@@ -305,8 +305,8 @@ def test_boulder_story_gym_project_can_carry_its_own_grade(client, seeded):
     assert resp.json()["grade"] == "9"
 
 
-def test_unknown_route_kind_is_422(client, seeded):
-    resp = client.post(
+def test_unknown_route_kind_is_422(admin_client, seeded):
+    resp = admin_client.post(
         "/routes/",
         json=route_payload(gym_id(seeded, "Batuu"), route_kind="nonsense"),
     )
@@ -318,8 +318,8 @@ def test_unknown_route_kind_is_422(client, seeded):
 
 
 @pytest.fixture
-def batuu_route(client, seeded):
-    resp = client.post(
+def batuu_route(admin_client, seeded):
+    resp = admin_client.post(
         "/routes/",
         json=route_payload(
             gym_id(seeded, "Batuu"),
@@ -330,23 +330,23 @@ def batuu_route(client, seeded):
     return resp.json()
 
 
-def test_update_to_another_locked_grade(client, seeded, batuu_route):
+def test_update_to_another_locked_grade(admin_client, seeded, batuu_route):
     new = grade_id(seeded, "Batuu 1-15", "10")
 
-    resp = client.put(f"/routes/{batuu_route['id']}", json={"grade_id": new})
+    resp = admin_client.put(f"/routes/{batuu_route['id']}", json={"grade_id": new})
 
     assert resp.status_code == 200
     assert resp.json()["grade"] == "10"
 
 
-def test_update_with_free_text_on_branded_gym_is_rejected(client, batuu_route):
-    resp = client.put(f"/routes/{batuu_route['id']}", json={"grade": "V9"})
+def test_update_with_free_text_on_branded_gym_is_rejected(admin_client, batuu_route):
+    resp = admin_client.put(f"/routes/{batuu_route['id']}", json={"grade": "V9"})
 
     assert resp.status_code == 422
 
 
-def test_update_not_touching_grade_leaves_it_alone(client, batuu_route):
-    resp = client.put(f"/routes/{batuu_route['id']}", json={"wall": "Cave"})
+def test_update_not_touching_grade_leaves_it_alone(admin_client, batuu_route):
+    resp = admin_client.put(f"/routes/{batuu_route['id']}", json={"wall": "Cave"})
 
     assert resp.status_code == 200
     assert resp.json()["grade"] == "4"
@@ -354,9 +354,9 @@ def test_update_not_touching_grade_leaves_it_alone(client, batuu_route):
 
 
 def test_moving_route_to_another_brand_requires_a_matching_grade(
-    client, seeded, batuu_route
+    admin_client, seeded, batuu_route
 ):
-    resp = client.put(
+    resp = admin_client.put(
         f"/routes/{batuu_route['id']}",
         json={"gym_id": gym_id(seeded, "Camp5 Jumpa")},
     )
@@ -364,16 +364,16 @@ def test_moving_route_to_another_brand_requires_a_matching_grade(
     assert resp.status_code == 422
 
 
-def test_legacy_route_can_be_edited_without_touching_grade(client, db):
+def test_legacy_route_can_be_edited_without_touching_grade(admin_client, db):
     """A route that predates grade scales keeps working for other edits."""
     gym = Gym(name="Old Gym", location="Penang")
     db.add(gym)
     db.commit()
-    created = client.post(
+    created = admin_client.post(
         "/routes/", json=route_payload(gym.id, grade="V3")
     ).json()
 
-    resp = client.put(f"/routes/{created['id']}", json={"colour": "red"})
+    resp = admin_client.put(f"/routes/{created['id']}", json={"colour": "red"})
 
     assert resp.status_code == 200
     assert resp.json()["grade"] == "V3"
@@ -382,10 +382,10 @@ def test_legacy_route_can_be_edited_without_touching_grade(client, db):
 # --- gyms ------------------------------------------------------------------
 
 
-def test_create_gym_with_brand_and_address(client, seeded):
+def test_create_gym_with_brand_and_address(admin_client, seeded):
     brand = seeded.query(GymBrand).filter(GymBrand.slug == "camp-5").one().id
 
-    resp = client.post(
+    resp = admin_client.post(
         "/gyms/",
         json={
             "name": "Camp5 New",
@@ -400,8 +400,8 @@ def test_create_gym_with_brand_and_address(client, seeded):
     assert resp.json()["address"] == "1 Test Road"
 
 
-def test_create_gym_with_unknown_brand_is_400(client):
-    resp = client.post(
+def test_create_gym_with_unknown_brand_is_400(admin_client):
+    resp = admin_client.post(
         "/gyms/",
         json={"name": "X", "location": "Y", "brand_id": 999},
     )
@@ -409,11 +409,11 @@ def test_create_gym_with_unknown_brand_is_400(client):
     assert resp.status_code == 400
 
 
-def test_update_gym_with_unknown_brand_is_400(client, db):
+def test_update_gym_with_unknown_brand_is_400(admin_client, db):
     db.add(Gym(name="Plain Gym", location="Penang"))
     db.commit()
 
-    resp = client.put(f"/gyms/{db.query(Gym).one().id}", json={"brand_id": 999})
+    resp = admin_client.put(f"/gyms/{db.query(Gym).one().id}", json={"brand_id": 999})
 
     assert resp.status_code == 400
 

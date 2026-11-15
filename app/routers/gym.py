@@ -2,6 +2,13 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.dependencies.auth import (
+    ensure_can_manage_gym,
+    get_current_user,
+    is_super_admin,
+    require_super_admin,
+)
+from app.models.user import User
 from app.crud.gym import (
     create_gym,
     get_gym,
@@ -37,6 +44,7 @@ router = APIRouter(
 def create_new_gym(
     gym: GymCreate,
     db: Session = Depends(get_db),
+    _admin: User = Depends(require_super_admin),
 ):
     if get_gym_by_name(db, gym.name):
         raise HTTPException(
@@ -133,7 +141,20 @@ def update_existing_gym(
     gym_id: int,
     gym_update: GymUpdate,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
+    ensure_can_manage_gym(current_user, gym_id)
+
+    # Gym admins edit their gym's details. Identity and brand stay with super admins.
+    if not is_super_admin(current_user):
+        restricted = {"name", "brand_id", "is_active"} & gym_update.model_fields_set
+
+        if restricted:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Only a super admin can change: {', '.join(sorted(restricted))}",
+            )
+
     try:
         gym = update_gym(
             db=db,
@@ -162,6 +183,7 @@ def update_existing_gym(
 def remove_gym(
     gym_id: int,
     db: Session = Depends(get_db),
+    _admin: User = Depends(require_super_admin),
 ):
     try:
         gym = delete_gym(db, gym_id)
